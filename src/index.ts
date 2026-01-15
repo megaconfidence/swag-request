@@ -1,65 +1,119 @@
-import { DurableObject } from "cloudflare:workers";
-
 /**
- * Welcome to Cloudflare Workers! This is your first Durable Objects application.
+ * Cloudflare Swag Request Application
  *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your Durable Object in action
- * - Run `npm run deploy` to publish your application
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/durable-objects
+ * A form-based application for users to request Cloudflare swag.
+ * Features:
+ * - User swag request form with validation
+ * - Admin authentication via OTP (restricted to @cloudflare.com emails)
+ * - Admin dashboard to manage requests
+ * - Email notifications via Resend
+ * - Automatic data expiration (TTL: 1 week)
+ * - Maximum 10 requests per user
  */
 
+import type { Env } from './types';
+import { initializeDatabase, cleanupExpiredData } from './db';
+import { jsonResponse } from './utils/response';
+import { handleSwagRequestSubmission } from './handlers/swag';
+import {
+	handleSendOTP,
+	handleVerifyOTP,
+	handleCheckAuth,
+	handleLogout,
+	handleGetRequests,
+	handleApproveRequest,
+	handleDeleteRequest,
+	handleExportCSV,
+} from './handlers/admin';
 
-/** A Durable Object's behavior is defined in an exported Javascript class */
-export class MyDurableObject extends DurableObject {
-	/**
-	 * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
-	 * 	`DurableObjectStub::get` for a given identifier (no-op constructors can be omitted)
-	 *
-	 * @param ctx - The interface for interacting with Durable Object state
-	 * @param env - The interface to reference bindings declared in wrangler.jsonc
-	 */
-	constructor(ctx: DurableObjectState, env: Env) {
-		super(ctx, env);
-	}
-
-	/**
-	 * The Durable Object exposes an RPC method sayHello which will be invoked when a Durable
-	 *  Object instance receives a request from a Worker via the same method invocation on the stub
-	 *
-	 * @param name - The name provided to a Durable Object instance from a Worker
-	 * @returns The greeting to be sent back to the Worker
-	 */
-	async sayHello(name: string): Promise<string> {
-		return `Hello, ${name}!`;
-	}
-}
+// Re-export Env type for worker-configuration.d.ts
+export type { Env } from './types';
 
 export default {
-	/**
-	 * This is the standard fetch handler for a Cloudflare Worker
-	 *
-	 * @param request - The request submitted to the Worker from the client
-	 * @param env - The interface to reference bindings declared in wrangler.jsonc
-	 * @param ctx - The execution context of the Worker
-	 * @returns The response to be sent back to the client
-	 */
-	async fetch(request, env, ctx): Promise<Response> {
-		// Create a stub to open a communication channel with the Durable Object
-		// instance named "foo".
-		//
-		// Requests from all Workers to the Durable Object instance named "foo"
-		// will go to a single remote Durable Object instance.
-		const stub = env.MY_DURABLE_OBJECT.getByName("foo");
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const url = new URL(request.url);
+		const path = url.pathname;
+		const method = request.method;
 
-		// Call the `sayHello()` RPC method on the stub to invoke the method on
-		// the remote Durable Object instance.
-		const greeting = await stub.sayHello("world");
+		// Initialize database (create tables if they don't exist)
+		await initializeDatabase(env.DB);
 
-		return new Response(greeting);
+		// Clean up expired data periodically
+		ctx.waitUntil(cleanupExpiredData(env.DB));
+
+		// API Routes
+		if (path.startsWith('/api/')) {
+			// CORS headers for API routes
+			if (method === 'OPTIONS') {
+				return new Response(null, {
+					headers: {
+						'Access-Control-Allow-Origin': '*',
+						'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+						'Access-Control-Allow-Headers': 'Content-Type',
+					},
+				});
+			}
+
+			// Swag request submission
+			if (path === '/api/swag-request' && method === 'POST') {
+				return handleSwagRequestSubmission(request, env);
+			}
+
+			// Admin: Send OTP
+			if (path === '/api/admin/send-otp' && method === 'POST') {
+				return handleSendOTP(request, env);
+			}
+
+			// Admin: Verify OTP
+			if (path === '/api/admin/verify-otp' && method === 'POST') {
+				return handleVerifyOTP(request, env);
+			}
+
+			// Admin: Check authentication
+			if (path === '/api/admin/check-auth' && method === 'GET') {
+				return handleCheckAuth(request, env);
+			}
+
+			// Admin: Logout
+			if (path === '/api/admin/logout' && method === 'POST') {
+				return handleLogout(request, env);
+			}
+
+			// Admin: Get all requests
+			if (path === '/api/admin/requests' && method === 'GET') {
+				return handleGetRequests(request, env);
+			}
+
+			// Admin: Approve request
+			const approveMatch = path.match(/^\/api\/admin\/requests\/(\d+)\/approve$/);
+			if (approveMatch && method === 'POST') {
+				return handleApproveRequest(request, env, parseInt(approveMatch[1]));
+			}
+
+			// Admin: Delete request
+			const deleteMatch = path.match(/^\/api\/admin\/requests\/(\d+)$/);
+			if (deleteMatch && method === 'DELETE') {
+				return handleDeleteRequest(request, env, parseInt(deleteMatch[1]));
+			}
+
+			// Admin: Export CSV
+			if (path === '/api/admin/export-csv' && method === 'GET') {
+				return handleExportCSV(request, env);
+			}
+
+			return jsonResponse({ error: 'Not found' }, 404);
+		}
+
+		// Serve static files for admin routes
+		if (path === '/admin/login' && env.ASSETS) {
+			return env.ASSETS.fetch(new Request(new URL('/admin/login.html', request.url), request));
+		}
+
+		if (path === '/admin/dashboard' && env.ASSETS) {
+			return env.ASSETS.fetch(new Request(new URL('/admin/dashboard.html', request.url), request));
+		}
+
+		// Let Workers Assets handle other requests
+		return new Response('Not found', { status: 404 });
 	},
 } satisfies ExportedHandler<Env>;

@@ -1,20 +1,756 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
-	</head>
-	<body>
-		<h1 id="heading"></h1>
-		<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
-		<script>
-			fetch('/message')
-				.then((resp) => resp.text())
-				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
-				});
-		</script>
-	</body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <title>Cloudflare Swag Request</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-primary: #f6821f;
+            --accent-secondary: #fbad41;
+            --accent-light: #fff7ed;
+            --accent-gradient: linear-gradient(135deg, #f6821f 0%, #fbad41 100%);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Background pattern */
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                radial-gradient(circle at 1px 1px, var(--border-color) 1px, transparent 0);
+            background-size: 32px 32px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        /* Ambient decorations */
+        .decoration {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .decoration-1 {
+            width: 500px;
+            height: 500px;
+            top: -150px;
+            right: -100px;
+            background: var(--accent-light);
+        }
+
+        .decoration-2 {
+            width: 400px;
+            height: 400px;
+            bottom: -100px;
+            left: -100px;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+.logo-img {
+            height: 36px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.125rem;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .admin-link {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .admin-link:hover {
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            background: var(--accent-light);
+        }
+
+        /* Main content */
+        main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7rem 2rem 4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5rem;
+            max-width: 1200px;
+            width: 100%;
+            align-items: center;
+        }
+
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+                text-align: center;
+            }
+        }
+
+        /* Hero section */
+        .hero-section {
+            animation: fadeUp 0.6s ease-out;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--accent-light);
+            border: 1px solid rgba(246, 130, 31, 0.2);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+        }
+
+        .title-accent {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-description {
+            font-size: 1.0625rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            max-width: 480px;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-description {
+                margin: 0 auto;
+            }
+        }
+
+        /* Form card */
+        .form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            animation: fadeUp 0.6s ease-out 0.15s both;
+        }
+
+        .form-header {
+            margin-bottom: 1.75rem;
+        }
+
+        .form-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.375rem;
+            margin-bottom: 0.375rem;
+            color: var(--text-primary);
+        }
+
+        .form-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        /* Alert messages */
+        .alert {
+            display: none;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .alert-header svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .alert p {
+            color: inherit;
+            opacity: 0.85;
+            font-size: 0.8125rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Form styles */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.9375rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(246, 130, 31, 0.1);
+            background: var(--bg-primary);
+        }
+
+        .form-input.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        textarea.form-input {
+            resize: none;
+            min-height: 90px;
+        }
+
+        .field-error {
+            display: none;
+            font-size: 0.75rem;
+            color: #dc2626;
+            margin-top: 0.375rem;
+        }
+
+        .field-error.show {
+            display: block;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px -6px rgba(246, 130, 31, 0.5);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .submit-btn.loading .btn-text { display: none; }
+        .submit-btn.loading .btn-spinner { display: block; }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        footer {
+            padding: 2rem;
+            text-align: center;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            position: relative;
+            z-index: 1;
+        }
+
+        .legal-note {
+            margin-top: 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 0.875rem 1rem;
+            }
+
+            .logo-img {
+                height: 32px;
+            }
+
+            main {
+                padding: 6rem 1rem 2rem;
+            }
+
+            .form-card {
+                padding: 1.75rem;
+            }
+
+            .decoration {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background elements -->
+    <div class="bg-pattern"></div>
+    <div class="decoration decoration-1"></div>
+    <div class="decoration decoration-2"></div>
+
+    <div class="page-wrapper">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo-group">
+                    <svg class="logo-img" viewBox="0 0 239 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_landing)">
+                            <path d="M51.027 36.4346L51.405 35.1054C51.8639 33.532 51.6929 32.0671 50.928 31.0001C50.2261 30.0144 49.0562 29.4358 47.6343 29.3635L20.7268 29.0199C20.5469 29.0108 20.3939 28.9294 20.3039 28.7937C20.2139 28.6581 20.1869 28.4772 20.25 28.3054C20.3399 28.0432 20.6009 27.8353 20.8709 27.8262L48.0212 27.4826C51.243 27.3379 54.7257 24.7066 55.9496 21.5055L57.4974 17.4364C57.5424 17.3279 57.5604 17.2104 57.5604 17.0928C57.5604 17.0295 57.5514 16.9662 57.5424 16.9029C55.7966 8.95458 48.7322 3.01367 40.3 3.01367C32.5248 3.01367 25.9194 8.05937 23.5526 15.0673C22.0227 13.9189 20.0699 13.304 17.9641 13.5119C14.2295 13.8827 11.2328 16.9029 10.8638 20.6555C10.7648 21.6321 10.8458 22.5634 11.0707 23.4496C4.97834 23.6305 0.0917969 28.649 0.0917969 34.807C0.0917969 35.3676 0.136793 35.9101 0.208786 36.4527C0.244782 36.715 0.469762 36.9048 0.730737 36.9048L50.397 36.9139C50.4061 36.9139 50.4061 36.9139 50.4151 36.9139C50.6941 36.9048 50.946 36.715 51.027 36.4346Z" fill="#F6821F"/>
+                            <path d="M59.9905 17.7363C59.7386 17.7363 59.4955 17.7454 59.2436 17.7544C59.1986 17.7544 59.1626 17.7634 59.1266 17.7815C59.0006 17.8267 58.8926 17.9352 58.8567 18.0709L57.7948 21.7421C57.3357 23.3155 57.5068 24.7803 58.2717 25.8473C58.9736 26.833 60.1435 27.4117 61.5654 27.4841L67.2979 27.8277C67.4688 27.8367 67.6129 27.9181 67.7028 28.0537C67.8018 28.1894 67.8198 28.3702 67.7658 28.5421C67.6758 28.8042 67.4148 29.0122 67.1449 29.0213L61.1874 29.3649C57.9567 29.5186 54.465 32.1409 53.2411 35.342L52.8092 36.4722C52.7282 36.6803 52.8812 36.8973 53.0881 36.9063C53.0972 36.9063 53.0972 36.9063 53.1062 36.9063H73.6153C73.8583 36.9063 74.0742 36.7435 74.1463 36.5085C74.5062 35.2334 74.6952 33.8952 74.6952 32.5027C74.6952 24.3554 68.1078 17.7363 59.9905 17.7363Z" fill="#FBAD41"/>
+                            <path d="M97.3086 24.3633H100.701V33.686H106.641V36.6701H97.3086V24.3633Z" fill="black"/>
+                            <path d="M110.16 30.5496V30.5134C110.16 26.9778 112.995 24.1113 116.774 24.1113C120.555 24.1113 123.353 26.9417 123.353 30.4773V30.5134C123.353 34.049 120.519 36.9155 116.739 36.9155C112.959 36.9155 110.16 34.0852 110.16 30.5496ZM119.888 30.5496V30.5134C119.888 28.7411 118.611 27.1858 116.739 27.1858C114.885 27.1858 113.643 28.6959 113.643 30.4773V30.5134C113.643 32.2857 114.921 33.841 116.774 33.841C118.647 33.841 119.888 32.331 119.888 30.5496Z" fill="black"/>
+                            <path d="M127.51 31.2716V24.3633H130.956V31.2084C130.956 32.9807 131.847 33.8307 133.215 33.8307C134.582 33.8307 135.474 33.026 135.474 31.2989V24.3723H138.92V31.1993C138.92 35.178 136.662 36.9142 133.179 36.9142C129.696 36.8961 127.51 35.1238 127.51 31.2716Z" fill="black"/>
+                            <path d="M144.123 24.3633H148.847C153.222 24.3633 155.759 26.8951 155.759 30.4489V30.485C155.759 34.0386 153.185 36.6791 148.775 36.6791H144.123V24.3633ZM148.902 33.6498C150.935 33.6498 152.277 32.5286 152.277 30.5392V30.5031C152.277 28.5319 150.927 27.3925 148.902 27.3925H147.516V33.6498H148.902Z" fill="black"/>
+                            <path d="M160.689 24.3633H170.499V27.3473H164.092V29.4451H169.887V32.2754H164.092V36.6701H160.689V24.3633Z" fill="black"/>
+                            <path d="M175.225 24.3633H178.617V33.686H184.548V36.6701H175.225V24.3633Z" fill="black"/>
+                            <path d="M193.429 24.2734H196.705L201.924 36.6706H198.279L197.388 34.4734H192.664L191.791 36.6706H188.219L193.429 24.2734ZM196.399 31.8148L195.031 28.3154L193.645 31.8148H196.399Z" fill="black"/>
+                            <path d="M206.289 24.3633H212.085C213.956 24.3633 215.253 24.8606 216.072 25.7015C216.791 26.4068 217.16 27.3563 217.16 28.568V28.6042C217.16 30.485 216.161 31.7328 214.641 32.3839L217.565 36.6791H213.642L211.175 32.9536H209.682V36.6791H206.289V24.3633ZM211.922 30.268C213.074 30.268 213.741 29.7073 213.741 28.8121V28.776C213.741 27.8084 213.038 27.3202 211.905 27.3202H209.682V30.277H211.922V30.268Z" fill="black"/>
+                            <path d="M222.057 24.3633H231.91V27.2658H225.422V29.1286H231.298V31.8143H225.422V33.7674H232V36.6701H222.057V24.3633Z" fill="black"/>
+                            <path d="M89.8752 31.9964C89.3982 33.0725 88.3993 33.841 87.0674 33.841C85.2137 33.841 83.9358 32.2947 83.9358 30.5134V30.4773C83.9358 28.705 85.1776 27.1858 87.0315 27.1858C88.4263 27.1858 89.4972 28.0539 89.9472 29.2294H93.5288C92.9529 26.2996 90.3972 24.1113 87.0674 24.1113C83.2879 24.1113 80.4531 26.9778 80.4531 30.5134V30.5496C80.4531 34.0852 83.2518 36.9155 87.0315 36.9155C90.2622 36.9155 92.791 34.8086 93.4569 31.9874H89.8752V31.9964Z" fill="black"/>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_landing">
+                                <rect width="231.908" height="35.9294" fill="white" transform="translate(0.0917969 2)"/>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                    <span class="logo-text">Swag Request</span>
+                </div>
+                <a href="/admin/login" class="admin-link">Admin Portal</a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <div class="content-wrapper">
+                <!-- Hero Section -->
+                <div class="hero-section">
+                    <div class="hero-badge">
+                        <span class="badge-dot"></span>
+                        Limited Edition Swag
+                    </div>
+                    <h1 class="hero-title">
+                        Claim Your<br>
+                        <span class="title-accent">Exclusive Gear</span>
+                    </h1>
+                    <p class="hero-description">
+                        Join the Cloudflare community and get your hands on premium merchandise. 
+                        Fill out the form and we'll ship exclusive swag directly to your door.
+                    </p>
+                </div>
+
+                <!-- Form Card -->
+                <div class="form-card">
+                    <div class="form-header">
+                        <h2 class="form-title">Request Form</h2>
+                        <p class="form-subtitle">All fields are required</p>
+                    </div>
+
+                    <!-- Success Alert -->
+                    <div id="success-message" class="alert alert-success">
+                        <div class="alert-header">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Request Submitted
+                        </div>
+                        <p>If approved, we'll reach out via email. Your data is automatically deleted after 1 week.</p>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="error-message" class="alert alert-error">
+                        <div class="alert-header">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            <span id="error-text">Error</span>
+                        </div>
+                    </div>
+
+                    <form id="swag-form">
+                        <div class="form-group">
+                            <label class="form-label" for="name">Full Name</label>
+                            <input 
+                                type="text" 
+                                id="name" 
+                                name="name" 
+                                class="form-input"
+                                placeholder="Jane Doe"
+                                required
+                                minlength="2"
+                            >
+                            <span id="name-error" class="field-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email Address</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                class="form-input"
+                                placeholder="jane@company.com"
+                                required
+                            >
+                            <span id="email-error" class="field-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                class="form-input"
+                                placeholder="+1 (555) 000-0000"
+                                required
+                            >
+                            <span id="phone-error" class="field-error"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="address">Shipping Address</label>
+                            <textarea 
+                                id="address" 
+                                name="address" 
+                                class="form-input"
+                                placeholder="123 Main St, City, State, ZIP, Country"
+                                required
+                                minlength="10"
+                            ></textarea>
+                            <span id="address-error" class="field-error"></span>
+                        </div>
+
+                        <button type="submit" id="submit-btn" class="submit-btn">
+                            <span class="btn-content">
+                                <span class="btn-text">Submit Request</span>
+                                <span class="btn-spinner"></span>
+                            </span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; 2026 Cloudflare, Inc. All rights reserved.</p>
+            <p class="legal-note">By submitting, you agree to receive Cloudflare swag and communications.</p>
+        </footer>
+    </div>
+
+    <script>
+        const form = document.getElementById('swag-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const phonePattern = /^[\d\s\+\-\(\)]{7,}$/;
+
+        function showFieldError(fieldId, message) {
+            const errorEl = document.getElementById(`${fieldId}-error`);
+            const inputEl = document.getElementById(fieldId);
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            inputEl.classList.add('error');
+        }
+
+        function clearFieldError(fieldId) {
+            const errorEl = document.getElementById(`${fieldId}-error`);
+            const inputEl = document.getElementById(fieldId);
+            errorEl.classList.remove('show');
+            inputEl.classList.remove('error');
+        }
+
+        function validateForm() {
+            let isValid = true;
+            ['name', 'email', 'phone', 'address'].forEach(clearFieldError);
+
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const address = document.getElementById('address').value.trim();
+
+            if (name.length < 2) {
+                showFieldError('name', 'Name must be at least 2 characters');
+                isValid = false;
+            }
+            if (!emailPattern.test(email)) {
+                showFieldError('email', 'Please enter a valid email address');
+                isValid = false;
+            }
+            if (!phonePattern.test(phone)) {
+                showFieldError('phone', 'Please enter a valid phone number');
+                isValid = false;
+            }
+            if (address.length < 10) {
+                showFieldError('address', 'Please enter a complete shipping address');
+                isValid = false;
+            }
+            return isValid;
+        }
+
+        ['name', 'email', 'phone', 'address'].forEach(fieldId => {
+            document.getElementById(fieldId).addEventListener('blur', () => {
+                const value = document.getElementById(fieldId).value.trim();
+                clearFieldError(fieldId);
+                
+                if (fieldId === 'name' && value.length > 0 && value.length < 2) {
+                    showFieldError('name', 'Name must be at least 2 characters');
+                }
+                if (fieldId === 'email' && value.length > 0 && !emailPattern.test(value)) {
+                    showFieldError('email', 'Please enter a valid email address');
+                }
+                if (fieldId === 'phone' && value.length > 0 && !phonePattern.test(value)) {
+                    showFieldError('phone', 'Please enter a valid phone number');
+                }
+                if (fieldId === 'address' && value.length > 0 && value.length < 10) {
+                    showFieldError('address', 'Please enter a complete shipping address');
+                }
+            });
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            successMessage.classList.remove('show');
+            errorMessage.classList.remove('show');
+
+            if (!validateForm()) return;
+
+            submitBtn.classList.add('loading');
+            submitBtn.disabled = true;
+
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                address: document.getElementById('address').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/swag-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    successMessage.classList.add('show');
+                    form.reset();
+                } else {
+                    errorText.textContent = result.error || 'An error occurred. Please try again.';
+                    errorMessage.classList.add('show');
+                }
+            } catch (error) {
+                errorText.textContent = 'Network error. Please check your connection.';
+                errorMessage.classList.add('show');
+            } finally {
+                submitBtn.classList.remove('loading');
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
 </html>
