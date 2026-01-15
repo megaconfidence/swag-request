@@ -76,10 +76,13 @@ describe('Swag Request Application', () => {
 		await env.DB.exec("CREATE TABLE IF NOT EXISTS swag_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, address TEXT NOT NULL, promo_code TEXT, status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')), created_at DATETIME DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME DEFAULT (datetime('now', '+30 days')))");
 
 		await env.DB.exec("CREATE TABLE IF NOT EXISTS admin_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, otp TEXT NOT NULL, session_token TEXT, otp_expires_at DATETIME NOT NULL, session_expires_at DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+		await env.DB.exec("CREATE TABLE IF NOT EXISTS request_analytics (id INTEGER PRIMARY KEY AUTOINCREMENT, request_id INTEGER NOT NULL, country TEXT, country_code TEXT, city TEXT, continent TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (request_id) REFERENCES swag_requests(id) ON DELETE CASCADE)");
 	});
 
 	beforeEach(async () => {
 		// Clean up tables before each test
+		await env.DB.exec('DELETE FROM request_analytics');
 		await env.DB.exec('DELETE FROM swag_requests');
 		await env.DB.exec('DELETE FROM admin_sessions');
 	});
@@ -929,6 +932,297 @@ describe('Swag Request Application', () => {
 
 			expect(result?.name).toBe('John Doe');
 			expect(result?.email).toBe('john@example.com');
+		});
+	});
+
+	// ==========================================
+	// ANALYTICS SUMMARY TESTS
+	// ==========================================
+	describe('GET /api/admin/analytics/summary', () => {
+		const validSessionToken = 'valid-admin-session';
+
+		beforeEach(async () => {
+			// Create a valid admin session
+			const sessionExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+			await env.DB.prepare(`
+				INSERT INTO admin_sessions (email, otp, otp_expires_at, session_token, session_expires_at)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('admin@cloudflare.com', '123456', new Date().toISOString(), validSessionToken, sessionExpiresAt).run();
+		});
+
+		it('should return analytics summary for authenticated admin', async () => {
+			// Insert test requests with different statuses
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 1', 'user1@example.com', '+1 555 111 1111', '111 Main St', 'pending').run();
+
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 2', 'user2@example.com', '+1 555 222 2222', '222 Main St', 'approved').run();
+
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 3', 'user3@example.com', '+1 555 333 3333', '333 Main St', 'approved').run();
+
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 4', 'user4@example.com', '+1 555 444 4444', '444 Main St', 'rejected').run();
+
+			const request = createRequest('/api/admin/analytics/summary', {
+				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as { total: number; pending: number; approved: number; rejected: number; approval_rate: number };
+			expect(data.total).toBe(4);
+			expect(data.pending).toBe(1);
+			expect(data.approved).toBe(2);
+			expect(data.rejected).toBe(1);
+			// Approval rate: 2 / (2 + 1) = 66.7%
+			expect(data.approval_rate).toBe(66.7);
+		});
+
+		it('should return zeros when no requests exist', async () => {
+			const request = createRequest('/api/admin/analytics/summary', {
+				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as { total: number; pending: number; approved: number; rejected: number; approval_rate: number };
+			expect(data.total).toBe(0);
+			expect(data.pending).toBe(0);
+			expect(data.approved).toBe(0);
+			expect(data.rejected).toBe(0);
+			expect(data.approval_rate).toBe(0);
+		});
+
+		it('should return unauthorized for unauthenticated request', async () => {
+			const request = createRequest('/api/admin/analytics/summary');
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(401);
+		});
+	});
+
+	// ==========================================
+	// GEOGRAPHIC ANALYTICS TESTS
+	// ==========================================
+	describe('GET /api/admin/analytics/geographic', () => {
+		const validSessionToken = 'valid-admin-session';
+
+		beforeEach(async () => {
+			// Create a valid admin session
+			const sessionExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+			await env.DB.prepare(`
+				INSERT INTO admin_sessions (email, otp, otp_expires_at, session_token, session_expires_at)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('admin@cloudflare.com', '123456', new Date().toISOString(), validSessionToken, sessionExpiresAt).run();
+		});
+
+		it('should return geographic analytics for authenticated admin', async () => {
+			// Insert test requests
+			const result1 = await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 1', 'user1@example.com', '+1 555 111 1111', '111 Main St', 'pending').run();
+
+			const result2 = await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 2', 'user2@example.com', '+1 555 222 2222', '222 Main St', 'approved').run();
+
+			const result3 = await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 3', 'user3@example.com', '+1 555 333 3333', '333 Main St', 'approved').run();
+
+			// Insert analytics data
+			await env.DB.prepare(`
+				INSERT INTO request_analytics (request_id, country, country_code, city, continent)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind(result1.meta.last_row_id, 'United States', 'US', 'San Francisco', 'NA').run();
+
+			await env.DB.prepare(`
+				INSERT INTO request_analytics (request_id, country, country_code, city, continent)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind(result2.meta.last_row_id, 'United States', 'US', 'New York', 'NA').run();
+
+			await env.DB.prepare(`
+				INSERT INTO request_analytics (request_id, country, country_code, city, continent)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind(result3.meta.last_row_id, 'United Kingdom', 'GB', 'London', 'EU').run();
+
+			const request = createRequest('/api/admin/analytics/geographic', {
+				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as { 
+				countries: Array<{ name: string; code: string; count: number }>;
+				cities: Array<{ name: string; country: string; count: number }>;
+				continents: Array<{ name: string; count: number }>;
+			};
+			
+			expect(data.countries).toBeDefined();
+			expect(data.cities).toBeDefined();
+			expect(data.continents).toBeDefined();
+			
+			// US should have 2 requests
+			const usCountry = data.countries.find(c => c.code === 'US');
+			expect(usCountry?.count).toBe(2);
+			
+			// GB should have 1 request
+			const gbCountry = data.countries.find(c => c.code === 'GB');
+			expect(gbCountry?.count).toBe(1);
+			
+			// NA continent should have 2 requests
+			const naContinent = data.continents.find(c => c.name === 'NA');
+			expect(naContinent?.count).toBe(2);
+		});
+
+		it('should return empty arrays when no analytics data exists', async () => {
+			const request = createRequest('/api/admin/analytics/geographic', {
+				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as { 
+				countries: Array<unknown>;
+				cities: Array<unknown>;
+				continents: Array<unknown>;
+			};
+			expect(data.countries).toHaveLength(0);
+			expect(data.cities).toHaveLength(0);
+			expect(data.continents).toHaveLength(0);
+		});
+
+		it('should return unauthorized for unauthenticated request', async () => {
+			const request = createRequest('/api/admin/analytics/geographic');
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(401);
+		});
+	});
+
+	// ==========================================
+	// PROMO CODE ANALYTICS TESTS
+	// ==========================================
+	describe('GET /api/admin/analytics/promo-codes', () => {
+		const validSessionToken = 'valid-admin-session';
+
+		beforeEach(async () => {
+			// Create a valid admin session
+			const sessionExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+			await env.DB.prepare(`
+				INSERT INTO admin_sessions (email, otp, otp_expires_at, session_token, session_expires_at)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('admin@cloudflare.com', '123456', new Date().toISOString(), validSessionToken, sessionExpiresAt).run();
+		});
+
+		it('should return promo code analytics for authenticated admin', async () => {
+			// Insert test requests with promo codes
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, promo_code, status)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`).bind('User 1', 'user1@example.com', '+1 555 111 1111', '111 Main St', 'SUMMER2026', 'pending').run();
+
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, promo_code, status)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`).bind('User 2', 'user2@example.com', '+1 555 222 2222', '222 Main St', 'SUMMER2026', 'approved').run();
+
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, promo_code, status)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`).bind('User 3', 'user3@example.com', '+1 555 333 3333', '333 Main St', 'WINTER2026', 'approved').run();
+
+			await env.DB.prepare(`
+				INSERT INTO swag_requests (name, email, phone, address, status)
+				VALUES (?, ?, ?, ?, ?)
+			`).bind('User 4', 'user4@example.com', '+1 555 444 4444', '444 Main St', 'pending').run();
+
+			const request = createRequest('/api/admin/analytics/promo-codes', {
+				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as { 
+				top_codes: Array<{ code: string; count: number }>;
+				with_code: number;
+				without_code: number;
+			};
+			
+			expect(data.top_codes).toBeDefined();
+			expect(data.with_code).toBe(3);
+			expect(data.without_code).toBe(1);
+			
+			// SUMMER2026 should be first with 2 uses
+			const summerCode = data.top_codes.find(c => c.code === 'SUMMER2026');
+			expect(summerCode?.count).toBe(2);
+			
+			// WINTER2026 should have 1 use
+			const winterCode = data.top_codes.find(c => c.code === 'WINTER2026');
+			expect(winterCode?.count).toBe(1);
+		});
+
+		it('should return zeros when no requests exist', async () => {
+			const request = createRequest('/api/admin/analytics/promo-codes', {
+				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as { 
+				top_codes: Array<unknown>;
+				with_code: number;
+				without_code: number;
+			};
+			expect(data.top_codes).toHaveLength(0);
+			expect(data.with_code).toBe(0);
+			expect(data.without_code).toBe(0);
+		});
+
+		it('should return unauthorized for unauthenticated request', async () => {
+			const request = createRequest('/api/admin/analytics/promo-codes');
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(401);
 		});
 	});
 });

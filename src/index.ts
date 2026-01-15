@@ -25,6 +25,11 @@ import {
 	handleDeleteRequest,
 	handleExportCSV,
 } from './handlers/admin';
+import {
+	handleAnalyticsSummary,
+	handleGeographicAnalytics,
+	handlePromoCodeAnalytics,
+} from './handlers/analytics';
 
 // Re-export Env type for worker-configuration.d.ts
 export type { Env } from './types';
@@ -221,6 +226,24 @@ export default {
 			// Admin: Export CSV
 			if (path === '/api/admin/export-csv' && method === 'GET') {
 				response = await handleExportCSV(request, env);
+				return addSecurityHeaders(response);
+			}
+
+			// Admin: Analytics - Summary
+			if (path === '/api/admin/analytics/summary' && method === 'GET') {
+				response = await handleAnalyticsSummary(request, env);
+				return addSecurityHeaders(response);
+			}
+
+			// Admin: Analytics - Geographic
+			if (path === '/api/admin/analytics/geographic' && method === 'GET') {
+				response = await handleGeographicAnalytics(request, env);
+				return addSecurityHeaders(response);
+			}
+
+			// Admin: Analytics - Promo Codes
+			if (path === '/api/admin/analytics/promo-codes' && method === 'GET') {
+				response = await handlePromoCodeAnalytics(request, env);
 				return addSecurityHeaders(response);
 			}
 

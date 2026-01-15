@@ -916,6 +916,242 @@
             background: var(--bg-primary);
         }
 
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            background: var(--bg-tertiary);
+            padding: 0.25rem;
+            border-radius: 10px;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 0.625rem 1.25rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Analytics Styles */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .analytics-grid { grid-template-columns: 1fr; }
+        }
+
+        .analytics-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.25rem;
+        }
+
+        .analytics-card-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .analytics-list {
+            list-style: none;
+        }
+
+        .analytics-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.625rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .analytics-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .analytics-list-rank {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.6875rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-right: 0.75rem;
+        }
+
+        .analytics-list-item:nth-child(1) .analytics-list-rank {
+            background: var(--accent-light);
+            color: var(--accent-primary);
+        }
+
+        .analytics-list-item:nth-child(2) .analytics-list-rank {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .analytics-list-item:nth-child(3) .analytics-list-rank {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+
+        .analytics-list-name {
+            flex: 1;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .analytics-list-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.625rem;
+            border-radius: 6px;
+        }
+
+        .analytics-empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Promo Stats */
+        .promo-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .promo-stat {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+        }
+
+        .promo-stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .promo-stat-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+        }
+
+        /* Approval Rate Card */
+        .approval-rate-card {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .approval-rate-circle {
+            width: 100px;
+            height: 100px;
+            position: relative;
+        }
+
+        .approval-rate-circle svg {
+            transform: rotate(-90deg);
+            width: 100px;
+            height: 100px;
+        }
+
+        .approval-rate-circle circle {
+            fill: none;
+            stroke-width: 8;
+        }
+
+        .approval-rate-bg {
+            stroke: var(--bg-tertiary);
+        }
+
+        .approval-rate-fill {
+            stroke: var(--green-accent);
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .approval-rate-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .approval-rate-info {
+            flex: 1;
+        }
+
+        .approval-rate-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .approval-rate-desc {
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             header { padding: 0.75rem 1rem; }
@@ -1005,6 +1241,14 @@
 
         <!-- Main Content -->
         <main>
+            <!-- Tab Navigation -->
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="requests">Requests</button>
+                <button class="tab-btn" data-tab="analytics">Analytics</button>
+            </div>
+
+            <!-- Requests Tab -->
+            <div id="requests-tab" class="tab-content active">
             <!-- Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card total">
@@ -1163,6 +1407,124 @@
                             <option value="50">50</option>
                             <option value="100">100</option>
                         </select>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <!-- Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card total">
+                        <div class="stat-header">
+                            <span class="stat-label">Total Requests</span>
+                            <div class="stat-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div id="analytics-total" class="stat-value">--</div>
+                    </div>
+
+                    <div class="stat-card pending">
+                        <div class="stat-header">
+                            <span class="stat-label">Pending</span>
+                            <div class="stat-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div id="analytics-pending" class="stat-value">--</div>
+                    </div>
+
+                    <div class="stat-card approved">
+                        <div class="stat-header">
+                            <span class="stat-label">Approved</span>
+                            <div class="stat-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div id="analytics-approved" class="stat-value">--</div>
+                    </div>
+
+                    <div class="stat-card rejected">
+                        <div class="stat-header">
+                            <span class="stat-label">Rejected</span>
+                            <div class="stat-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div id="analytics-rejected" class="stat-value">--</div>
+                    </div>
+                </div>
+
+                <!-- Analytics Grid -->
+                <div class="analytics-grid">
+                    <!-- Approval Rate -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-card-title">Approval Rate</h3>
+                        <div class="approval-rate-card">
+                            <div class="approval-rate-circle">
+                                <svg viewBox="0 0 100 100">
+                                    <circle class="approval-rate-bg" cx="50" cy="50" r="42"></circle>
+                                    <circle id="approval-rate-fill" class="approval-rate-fill" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="264"></circle>
+                                </svg>
+                                <span id="approval-rate-value" class="approval-rate-value">--%</span>
+                            </div>
+                            <div class="approval-rate-info">
+                                <div class="approval-rate-title">Request Approval Rate</div>
+                                <div class="approval-rate-desc">Percentage of decided requests (approved + rejected) that were approved.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Countries -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-card-title">Top Countries</h3>
+                        <ul id="top-countries" class="analytics-list">
+                            <li class="analytics-empty">Loading...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Top Cities -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-card-title">Top Cities</h3>
+                        <ul id="top-cities" class="analytics-list">
+                            <li class="analytics-empty">Loading...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Continents -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-card-title">By Continent</h3>
+                        <ul id="continents" class="analytics-list">
+                            <li class="analytics-empty">Loading...</li>
+                        </ul>
+                    </div>
+
+                    <!-- Promo Codes -->
+                    <div class="analytics-card">
+                        <h3 class="analytics-card-title">Promo Code Usage</h3>
+                        <div class="promo-stats">
+                            <div class="promo-stat">
+                                <div id="promo-with" class="promo-stat-value">--</div>
+                                <div class="promo-stat-label">With Code</div>
+                            </div>
+                            <div class="promo-stat">
+                                <div id="promo-without" class="promo-stat-value">--</div>
+                                <div class="promo-stat-label">Without Code</div>
+                            </div>
+                        </div>
+                        <ul id="top-promo-codes" class="analytics-list">
+                            <li class="analytics-empty">Loading...</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -1544,6 +1906,127 @@
         document.getElementById('logout-btn').addEventListener('click', logout);
         confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) hideModal(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && confirmModal.classList.contains('show')) hideModal(); });
+
+        // Tab switching
+        let analyticsLoaded = false;
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
+                
+                if (btn.dataset.tab === 'analytics' && !analyticsLoaded) {
+                    fetchAnalytics();
+                    analyticsLoaded = true;
+                }
+            });
+        });
+
+        // Analytics functions
+        async function fetchAnalytics() {
+            try {
+                const [summaryRes, geoRes, promoRes] = await Promise.all([
+                    fetch('/api/admin/analytics/summary'),
+                    fetch('/api/admin/analytics/geographic'),
+                    fetch('/api/admin/analytics/promo-codes')
+                ]);
+
+                if (summaryRes.ok) {
+                    const summary = await summaryRes.json();
+                    renderAnalyticsSummary(summary);
+                }
+
+                if (geoRes.ok) {
+                    const geo = await geoRes.json();
+                    renderGeographicAnalytics(geo);
+                }
+
+                if (promoRes.ok) {
+                    const promo = await promoRes.json();
+                    renderPromoAnalytics(promo);
+                }
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+                showToast('Failed to load analytics', 'error');
+            }
+        }
+
+        function renderAnalyticsSummary(summary) {
+            animateValue('analytics-total', summary.total);
+            animateValue('analytics-pending', summary.pending);
+            animateValue('analytics-approved', summary.approved);
+            animateValue('analytics-rejected', summary.rejected);
+
+            // Update approval rate circle
+            const rate = summary.approval_rate || 0;
+            const circumference = 264; // 2 * PI * 42
+            const offset = circumference - (rate / 100) * circumference;
+            document.getElementById('approval-rate-fill').style.strokeDashoffset = offset;
+            document.getElementById('approval-rate-value').textContent = `${rate}%`;
+        }
+
+        function renderGeographicAnalytics(geo) {
+            // Countries
+            const countriesList = document.getElementById('top-countries');
+            if (geo.countries && geo.countries.length > 0) {
+                countriesList.innerHTML = geo.countries.map((c, i) => `
+                    <li class="analytics-list-item">
+                        <span class="analytics-list-rank">${i + 1}</span>
+                        <span class="analytics-list-name">${escapeHtml(c.name || c.code)}</span>
+                        <span class="analytics-list-count">${c.count}</span>
+                    </li>
+                `).join('');
+            } else {
+                countriesList.innerHTML = '<li class="analytics-empty">No geographic data yet</li>';
+            }
+
+            // Cities
+            const citiesList = document.getElementById('top-cities');
+            if (geo.cities && geo.cities.length > 0) {
+                citiesList.innerHTML = geo.cities.map((c, i) => `
+                    <li class="analytics-list-item">
+                        <span class="analytics-list-rank">${i + 1}</span>
+                        <span class="analytics-list-name">${escapeHtml(c.name)}${c.country ? ` (${c.country})` : ''}</span>
+                        <span class="analytics-list-count">${c.count}</span>
+                    </li>
+                `).join('');
+            } else {
+                citiesList.innerHTML = '<li class="analytics-empty">No city data yet</li>';
+            }
+
+            // Continents
+            const continentsList = document.getElementById('continents');
+            if (geo.continents && geo.continents.length > 0) {
+                continentsList.innerHTML = geo.continents.map((c, i) => `
+                    <li class="analytics-list-item">
+                        <span class="analytics-list-rank">${i + 1}</span>
+                        <span class="analytics-list-name">${escapeHtml(c.name)}</span>
+                        <span class="analytics-list-count">${c.count}</span>
+                    </li>
+                `).join('');
+            } else {
+                continentsList.innerHTML = '<li class="analytics-empty">No continent data yet</li>';
+            }
+        }
+
+        function renderPromoAnalytics(promo) {
+            document.getElementById('promo-with').textContent = promo.with_code || 0;
+            document.getElementById('promo-without').textContent = promo.without_code || 0;
+
+            const promoList = document.getElementById('top-promo-codes');
+            if (promo.top_codes && promo.top_codes.length > 0) {
+                promoList.innerHTML = promo.top_codes.map((c, i) => `
+                    <li class="analytics-list-item">
+                        <span class="analytics-list-rank">${i + 1}</span>
+                        <span class="analytics-list-name" style="font-family: 'JetBrains Mono', monospace;">${escapeHtml(c.code)}</span>
+                        <span class="analytics-list-count">${c.count}</span>
+                    </li>
+                `).join('');
+            } else {
+                promoList.innerHTML = '<li class="analytics-empty">No promo codes used yet</li>';
+            }
+        }
 
         checkAuth();
         fetchRequests();
