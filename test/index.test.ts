@@ -46,16 +46,27 @@ interface SessionRow {
 }
 
 describe('Swag Request Application', () => {
-	// Helper to create a request
+	// Test origin for CSRF protection
+	const TEST_ORIGIN = 'http://localhost';
+
+	// Helper to create a request with proper headers for CSRF
 	const createRequest = (path: string, options: RequestInit = {}) => {
-		return new Request(`http://localhost${path}`, options);
+		const headers = new Headers(options.headers);
+		// Add Origin header for CSRF protection in tests
+		if (!headers.has('Origin') && options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method)) {
+			headers.set('Origin', TEST_ORIGIN);
+		}
+		return new Request(`${TEST_ORIGIN}${path}`, { ...options, headers });
 	};
 
 	// Helper to create JSON POST request
 	const createPostRequest = (path: string, body: unknown) => {
 		return createRequest(path, {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers: { 
+				'Content-Type': 'application/json',
+				'Origin': TEST_ORIGIN,
+			},
 			body: JSON.stringify(body),
 		});
 	};
@@ -515,7 +526,7 @@ describe('Swag Request Application', () => {
 
 			const request = createRequest('/api/admin/logout', {
 				method: 'POST',
-				headers: { 'Cookie': 'admin_session=valid-session-token' },
+				headers: { 'Cookie': 'admin_session=valid-session-token', 'Origin': TEST_ORIGIN },
 			});
 
 			const ctx = createExecutionContext();
@@ -613,7 +624,7 @@ describe('Swag Request Application', () => {
 
 			const request = createRequest(`/api/admin/requests/${insertedRequest?.id}/approve`, {
 				method: 'POST',
-				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+				headers: { 'Cookie': `admin_session=${validSessionToken}`, 'Origin': TEST_ORIGIN },
 			});
 
 			const ctx = createExecutionContext();
@@ -634,7 +645,7 @@ describe('Swag Request Application', () => {
 		it('should return 404 for non-existent request', async () => {
 			const request = createRequest('/api/admin/requests/99999/approve', {
 				method: 'POST',
-				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+				headers: { 'Cookie': `admin_session=${validSessionToken}`, 'Origin': TEST_ORIGIN },
 			});
 
 			const ctx = createExecutionContext();
@@ -647,6 +658,7 @@ describe('Swag Request Application', () => {
 		it('should return unauthorized for unauthenticated request', async () => {
 			const request = createRequest('/api/admin/requests/1/approve', {
 				method: 'POST',
+				headers: { 'Origin': TEST_ORIGIN },
 			});
 
 			const ctx = createExecutionContext();
@@ -682,7 +694,7 @@ describe('Swag Request Application', () => {
 
 			const request = createRequest(`/api/admin/requests/${insertedRequest?.id}`, {
 				method: 'DELETE',
-				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+				headers: { 'Cookie': `admin_session=${validSessionToken}`, 'Origin': TEST_ORIGIN },
 			});
 
 			const ctx = createExecutionContext();
@@ -703,7 +715,7 @@ describe('Swag Request Application', () => {
 		it('should return 404 for non-existent request', async () => {
 			const request = createRequest('/api/admin/requests/99999', {
 				method: 'DELETE',
-				headers: { 'Cookie': `admin_session=${validSessionToken}` },
+				headers: { 'Cookie': `admin_session=${validSessionToken}`, 'Origin': TEST_ORIGIN },
 			});
 
 			const ctx = createExecutionContext();
@@ -716,6 +728,7 @@ describe('Swag Request Application', () => {
 		it('should return unauthorized for unauthenticated request', async () => {
 			const request = createRequest('/api/admin/requests/1', {
 				method: 'DELETE',
+				headers: { 'Origin': TEST_ORIGIN },
 			});
 
 			const ctx = createExecutionContext();
@@ -871,7 +884,7 @@ describe('Swag Request Application', () => {
 		it('should handle malformed JSON in request body', async () => {
 			const request = createRequest('/api/swag-request', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', 'Origin': TEST_ORIGIN },
 				body: 'not valid json',
 			});
 
@@ -885,7 +898,7 @@ describe('Swag Request Application', () => {
 		it('should handle empty request body', async () => {
 			const request = createRequest('/api/swag-request', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', 'Origin': TEST_ORIGIN },
 				body: '{}',
 			});
 

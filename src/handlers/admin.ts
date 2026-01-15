@@ -3,11 +3,61 @@
  */
 
 import type { Env, OTPInput, VerifyOTPInput, AdminSession, SwagRequest } from '../types';
-import { emailPattern } from '../utils/validation';
+import { validateEmail, validateOTP } from '../utils/validation';
 import { generateOTP, generateSessionToken } from '../utils/crypto';
 import { sendEmail } from '../utils/email';
 import { jsonResponse } from '../utils/response';
 import { getSessionToken, validateAdminSession } from '../utils/session';
+import validator from 'validator';
+
+// Rate limiting constants
+const MAX_OTP_REQUESTS_PER_HOUR = 5;
+const MAX_OTP_VERIFY_ATTEMPTS = 5;
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Check rate limit for OTP requests
+ */
+async function checkOTPRateLimit(db: D1Database, email: string): Promise<{ allowed: boolean; remaining: number }> {
+	const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
+	
+	const result = await db.prepare(`
+		SELECT COUNT(*) as count FROM admin_sessions 
+		WHERE email = ? AND created_at > ?
+	`).bind(email, windowStart).first<{ count: number }>();
+	
+	const count = result?.count || 0;
+	return {
+		allowed: count < MAX_OTP_REQUESTS_PER_HOUR,
+		remaining: Math.max(0, MAX_OTP_REQUESTS_PER_HOUR - count)
+	};
+}
+
+/**
+ * Check rate limit for OTP verification attempts
+ */
+async function checkVerifyRateLimit(db: D1Database, email: string): Promise<{ allowed: boolean }> {
+	const windowStart = new Date(Date.now() - 15 * 60 * 1000).toISOString(); // 15 minute window
+	
+	// Count failed attempts (sessions without session_token that are expired)
+	const result = await db.prepare(`
+		SELECT COUNT(*) as count FROM admin_sessions 
+		WHERE email = ? AND created_at > ? AND session_token IS NULL AND otp_expires_at < datetime('now')
+	`).bind(email, windowStart).first<{ count: number }>();
+	
+	const count = result?.count || 0;
+	return { allowed: count < MAX_OTP_VERIFY_ATTEMPTS };
+}
+
+/**
+ * Get secure cookie string based on request
+ */
+function getSecureCookieString(request: Request, sessionToken: string, maxAge: number): string {
+	const isSecure = request.url.startsWith('https://') || 
+		request.headers.get('X-Forwarded-Proto') === 'https';
+	const secureFlag = isSecure ? '; Secure' : '';
+	return `admin_session=${sessionToken}; Path=/; HttpOnly; SameSite=Strict${secureFlag}; Max-Age=${maxAge}`;
+}
 
 /**
  * Handle send OTP request
@@ -15,16 +65,25 @@ import { getSessionToken, validateAdminSession } from '../utils/session';
 export async function handleSendOTP(request: Request, env: Env): Promise<Response> {
 	try {
 		const data = await request.json() as OTPInput;
-		const email = data.email?.trim().toLowerCase();
+		const email = validator.trim(data.email || '').toLowerCase();
 
 		// Validate email
-		if (!email || !emailPattern.test(email)) {
+		if (!email || !validateEmail(email)) {
 			return jsonResponse({ error: 'Please provide a valid email address' }, 400);
 		}
 
 		// Check if email is @cloudflare.com
 		if (!email.endsWith('@cloudflare.com')) {
 			return jsonResponse({ error: 'Only @cloudflare.com email addresses are allowed' }, 403);
+		}
+
+		// Check rate limit
+		const rateLimit = await checkOTPRateLimit(env.DB, email);
+		if (!rateLimit.allowed) {
+			return jsonResponse({ 
+				error: 'Too many OTP requests. Please try again later.',
+				retryAfter: 3600 
+			}, 429);
 		}
 
 		// Generate OTP
@@ -56,9 +115,9 @@ export async function handleSendOTP(request: Request, env: Env): Promise<Respons
 			`
 		);
 
-		// For development, if email fails, log the OTP
 		if (!emailSent) {
-			console.log(`OTP for ${email}: ${otp}`);
+			// Log error without exposing OTP
+			console.error(`Failed to send OTP email to ${email}`);
 		}
 
 		return jsonResponse({ success: true, message: 'OTP sent successfully' });
@@ -74,11 +133,25 @@ export async function handleSendOTP(request: Request, env: Env): Promise<Respons
 export async function handleVerifyOTP(request: Request, env: Env): Promise<Response> {
 	try {
 		const data = await request.json() as VerifyOTPInput;
-		const email = data.email?.trim().toLowerCase();
-		const otp = data.otp?.trim();
+		const email = validator.trim(data.email || '').toLowerCase();
+		const otp = validator.trim(data.otp || '');
 
 		if (!email || !otp) {
 			return jsonResponse({ error: 'Email and OTP are required' }, 400);
+		}
+
+		// Validate OTP format
+		if (!validateOTP(otp)) {
+			return jsonResponse({ error: 'Invalid OTP format' }, 400);
+		}
+
+		// Check rate limit for verification attempts
+		const rateLimit = await checkVerifyRateLimit(env.DB, email);
+		if (!rateLimit.allowed) {
+			return jsonResponse({ 
+				error: 'Too many failed attempts. Please request a new OTP.',
+				retryAfter: 900 
+			}, 429);
 		}
 
 		// Verify OTP
@@ -98,18 +171,24 @@ export async function handleVerifyOTP(request: Request, env: Env): Promise<Respo
 		const sessionToken = generateSessionToken();
 		const sessionExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
-		// Update session with token
+		// Update session with token and invalidate OTP (set to empty string to mark as used)
 		await env.DB.prepare(`
 			UPDATE admin_sessions 
-			SET session_token = ?, session_expires_at = ?
+			SET session_token = ?, session_expires_at = ?, otp = ''
 			WHERE id = ?
 		`).bind(sessionToken, sessionExpiresAt, session.id).run();
+
+		// Clean up old unused sessions for this email
+		await env.DB.prepare(`
+			DELETE FROM admin_sessions 
+			WHERE email = ? AND session_token IS NULL AND id != ?
+		`).bind(email, session.id).run();
 
 		return jsonResponse(
 			{ success: true, message: 'Login successful' },
 			200,
 			{
-				'Set-Cookie': `admin_session=${sessionToken}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`,
+				'Set-Cookie': getSecureCookieString(request, sessionToken, 86400),
 			}
 		);
 	} catch (error) {
@@ -146,7 +225,7 @@ export async function handleLogout(request: Request, env: Env): Promise<Response
 		{ success: true },
 		200,
 		{
-			'Set-Cookie': 'admin_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0',
+			'Set-Cookie': getSecureCookieString(request, '', 0),
 		}
 	);
 }
@@ -206,7 +285,10 @@ export async function handleApproveRequest(
 			'UPDATE swag_requests SET status = ? WHERE id = ?'
 		).bind('approved', requestId).run();
 
-		// Send approval email
+		// Send approval email (escape user content)
+		const safeName = validator.escape(swagRequest.name);
+		const safeAddress = validator.escape(swagRequest.address);
+		
 		await sendEmail(
 			env.RESEND_API_KEY,
 			env.FROM_EMAIL,
@@ -214,11 +296,11 @@ export async function handleApproveRequest(
 			'Your Cloudflare Swag Request Has Been Approved!',
 			`
 			<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-				<h2 style="color: #F6821F;">Great News, ${swagRequest.name}!</h2>
+				<h2 style="color: #F6821F;">Great News, ${safeName}!</h2>
 				<p>Your Cloudflare swag request has been approved!</p>
 				<div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
 					<p><strong>Shipping Address:</strong></p>
-					<p style="color: #666;">${swagRequest.address}</p>
+					<p style="color: #666;">${safeAddress}</p>
 				</div>
 				<p>Your swag will be shipped to the address above. You can expect to receive it within 2-4 weeks.</p>
 				<p style="color: #666; margin-top: 30px;">Thank you for being part of the Cloudflare community!</p>
