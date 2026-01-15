@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS swag_requests (
     promo_code TEXT,
     status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    expires_at DATETIME DEFAULT (datetime('now', '+7 days'))
+    expires_at DATETIME DEFAULT (datetime('now', '+30 days'))
 );
 
 -- Admin Sessions Table (for OTP authentication)

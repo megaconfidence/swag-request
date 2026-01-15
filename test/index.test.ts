@@ -30,6 +30,7 @@ interface SwagRequestRow {
 	email: string;
 	phone?: string;
 	address?: string;
+	promo_code?: string | null;
 	status?: string;
 	created_at?: string;
 	expires_at?: string;
@@ -61,7 +62,7 @@ describe('Swag Request Application', () => {
 
 	beforeAll(async () => {
 		// Initialize database tables
-		await env.DB.exec("CREATE TABLE IF NOT EXISTS swag_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, address TEXT NOT NULL, status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')), created_at DATETIME DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME DEFAULT (datetime('now', '+7 days')))");
+		await env.DB.exec("CREATE TABLE IF NOT EXISTS swag_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, address TEXT NOT NULL, promo_code TEXT, status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')), created_at DATETIME DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME DEFAULT (datetime('now', '+30 days')))");
 
 		await env.DB.exec("CREATE TABLE IF NOT EXISTS admin_sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL, otp TEXT NOT NULL, session_token TEXT, otp_expires_at DATETIME NOT NULL, session_expires_at DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
 	});
@@ -211,6 +212,99 @@ describe('Swag Request Application', () => {
 			// Verify email is stored in lowercase
 			const result = await env.DB.prepare('SELECT email FROM swag_requests').first<SwagRequestRow>();
 			expect(result?.email).toBe('john@example.com');
+		});
+
+		it('should submit a valid swag request with promo code', async () => {
+			const request = createPostRequest('/api/swag-request', {
+				name: 'John Doe',
+				email: 'john@example.com',
+				phone: '+1 555 123 4567',
+				address: '123 Main Street, City, State, 12345, USA',
+				promo_code: 'SUMMER2026',
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as SuccessResponse;
+			expect(data.success).toBe(true);
+
+			// Verify promo_code in database
+			const result = await env.DB.prepare('SELECT * FROM swag_requests WHERE email = ?')
+				.bind('john@example.com')
+				.first<SwagRequestRow>();
+			expect(result).toBeTruthy();
+			expect(result?.promo_code).toBe('SUMMER2026');
+		});
+
+		it('should submit a valid swag request without promo code', async () => {
+			const request = createPostRequest('/api/swag-request', {
+				name: 'Jane Doe',
+				email: 'jane@example.com',
+				phone: '+1 555 123 4567',
+				address: '123 Main Street, City, State, 12345, USA',
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+			const data = await response.json() as SuccessResponse;
+			expect(data.success).toBe(true);
+
+			// Verify promo_code is null in database
+			const result = await env.DB.prepare('SELECT * FROM swag_requests WHERE email = ?')
+				.bind('jane@example.com')
+				.first<SwagRequestRow>();
+			expect(result).toBeTruthy();
+			expect(result?.promo_code).toBeNull();
+		});
+
+		it('should trim whitespace from promo code', async () => {
+			const request = createPostRequest('/api/swag-request', {
+				name: 'John Doe',
+				email: 'john@example.com',
+				phone: '+1 555 123 4567',
+				address: '123 Main Street, City, State, 12345, USA',
+				promo_code: '  SUMMER2026  ',
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+
+			// Verify promo_code is trimmed in database
+			const result = await env.DB.prepare('SELECT promo_code FROM swag_requests WHERE email = ?')
+				.bind('john@example.com')
+				.first<SwagRequestRow>();
+			expect(result?.promo_code).toBe('SUMMER2026');
+		});
+
+		it('should store null for empty promo code string', async () => {
+			const request = createPostRequest('/api/swag-request', {
+				name: 'John Doe',
+				email: 'john@example.com',
+				phone: '+1 555 123 4567',
+				address: '123 Main Street, City, State, 12345, USA',
+				promo_code: '',
+			});
+
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			expect(response.status).toBe(200);
+
+			// Verify promo_code is null for empty string
+			const result = await env.DB.prepare('SELECT promo_code FROM swag_requests WHERE email = ?')
+				.bind('john@example.com')
+				.first<SwagRequestRow>();
+			expect(result?.promo_code).toBeNull();
 		});
 	});
 
@@ -741,7 +835,7 @@ describe('Swag Request Application', () => {
 	// DATA TTL / EXPIRATION TESTS
 	// ==========================================
 	describe('Data TTL and Expiration', () => {
-		it('should set expires_at to 7 days in the future', async () => {
+		it('should set expires_at to 30 days in the future', async () => {
 			const request = createPostRequest('/api/swag-request', {
 				name: 'John Doe',
 				email: 'john@example.com',
@@ -764,9 +858,9 @@ describe('Swag Request Application', () => {
 			const now = new Date();
 			const daysDiff = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
 			
-			// Should be approximately 7 days (allow some tolerance)
-			expect(daysDiff).toBeGreaterThan(6.9);
-			expect(daysDiff).toBeLessThan(7.1);
+			// Should be approximately 30 days (allow some tolerance)
+			expect(daysDiff).toBeGreaterThan(29.9);
+			expect(daysDiff).toBeLessThan(30.1);
 		});
 	});
 
