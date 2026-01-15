@@ -620,6 +620,18 @@
                             <span id="address-error" class="field-error"></span>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label" for="promo_code">Promo Code (Optional)</label>
+                            <input 
+                                type="text" 
+                                id="promo_code" 
+                                name="promo_code" 
+                                class="form-input"
+                                placeholder="Enter promo code if you have one"
+                            >
+                            <span id="promo_code-error" class="field-error"></span>
+                        </div>
+
                         <button type="submit" id="submit-btn" class="submit-btn">
                             <span class="btn-content">
                                 <span class="btn-text">Submit Request</span>
@@ -725,7 +737,8 @@
                 name: document.getElementById('name').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
-                address: document.getElementById('address').value.trim()
+                address: document.getElementById('address').value.trim(),
+                promo_code: document.getElementById('promo_code').value.trim() || undefined
             };
 
             try {

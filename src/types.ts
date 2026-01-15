@@ -15,6 +15,7 @@ export interface SwagRequest {
 	email: string;
 	phone: string;
 	address: string;
+	promo_code: string | null;
 	status: 'pending' | 'approved' | 'rejected';
 	created_at: string;
 	expires_at: string;
@@ -35,6 +36,7 @@ export interface SwagRequestInput {
 	email: string;
 	phone: string;
 	address: string;
+	promo_code?: string;
 }
 
 export interface OTPInput {

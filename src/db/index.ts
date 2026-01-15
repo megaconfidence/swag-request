@@ -14,6 +14,7 @@ export async function initializeDatabase(db: D1Database): Promise<void> {
 				email TEXT NOT NULL,
 				phone TEXT NOT NULL,
 				address TEXT NOT NULL,
+				promo_code TEXT,
 				status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
 				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 				expires_at DATETIME DEFAULT (datetime('now', '+7 days'))

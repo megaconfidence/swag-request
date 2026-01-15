@@ -237,6 +237,45 @@
             gap: 0.5rem;
         }
 
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 280px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.5rem 0.875rem 0.5rem 2.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.8125rem;
+            transition: all 0.2s ease;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.1);
+        }
+
         .filter-select {
             padding: 0.5rem 2rem 0.5rem 0.875rem;
             background: var(--bg-card);
@@ -254,6 +293,41 @@
         }
 
         .filter-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.1);
+        }
+
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .date-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .date-input {
+            padding: 0.5rem 0.625rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.8125rem;
+            transition: all 0.2s ease;
+        }
+
+        .date-input:focus {
             outline: none;
             border-color: var(--accent-primary);
             box-shadow: 0 0 0 2px rgba(246, 130, 31, 0.1);
@@ -392,6 +466,17 @@
         .cell-date {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.6875rem;
+            color: var(--text-muted);
+        }
+
+        .cell-promo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--accent-primary);
+        }
+
+        .no-promo {
             color: var(--text-muted);
         }
 
@@ -699,25 +784,34 @@
             background: var(--bg-primary);
         }
 
-        /* Responsive table columns */
-        @media (max-width: 1200px) {
-            .col-address { display: none; }
-        }
-
-        @media (max-width: 900px) {
-            .col-phone { display: none; }
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
             header { padding: 0.75rem 1rem; }
             main { padding: 1rem; }
-            .col-date { display: none; }
             .actions-bar {
                 flex-direction: column;
                 align-items: stretch;
             }
-            .actions-left { width: 100%; }
+            .actions-left { 
+                width: 100%;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .search-box {
+                max-width: none;
+                width: 100%;
+            }
             .filter-select { flex: 1; }
+            .date-range {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+            .date-input-wrapper {
+                flex: 1;
+            }
+            .date-input {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -818,12 +912,33 @@
             <!-- Actions Bar -->
             <div class="actions-bar">
                 <div class="actions-left">
+                    <div class="search-box">
+                        <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <input type="text" id="search-input" class="search-input" placeholder="Search name, email, phone, promo...">
+                    </div>
                     <select id="status-filter" class="filter-select">
                         <option value="all">All Requests</option>
                         <option value="pending">Pending Only</option>
                         <option value="approved">Approved Only</option>
                         <option value="rejected">Rejected Only</option>
                     </select>
+                    <div class="date-range">
+                        <div class="date-input-wrapper">
+                            <label class="date-label">From</label>
+                            <input type="date" id="date-from" class="date-input">
+                        </div>
+                        <div class="date-input-wrapper">
+                            <label class="date-label">To</label>
+                            <input type="date" id="date-to" class="date-input">
+                        </div>
+                        <button id="clear-dates-btn" class="icon-btn" title="Clear dates">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
                     <button id="refresh-btn" class="icon-btn" title="Refresh">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -848,6 +963,7 @@
                                 <th>Email</th>
                                 <th class="col-phone">Phone</th>
                                 <th class="col-address">Address</th>
+                                <th class="col-promo">Promo Code</th>
                                 <th>Status</th>
                                 <th class="col-date">Created</th>
                                 <th>Actions</th>
@@ -903,6 +1019,9 @@
     <script>
         let requests = [];
         let currentFilter = 'all';
+        let searchQuery = '';
+        let dateFrom = '';
+        let dateTo = '';
         let pendingAction = null;
 
         const tableBody = document.getElementById('requests-table-body');
@@ -976,9 +1095,31 @@
         }
 
         function renderTable() {
-            const filteredRequests = currentFilter === 'all' 
+            let filteredRequests = currentFilter === 'all' 
                 ? requests 
                 : requests.filter(r => r.status === currentFilter);
+
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filteredRequests = filteredRequests.filter(r => 
+                    r.name.toLowerCase().includes(query) ||
+                    r.email.toLowerCase().includes(query) ||
+                    r.phone.toLowerCase().includes(query) ||
+                    (r.promo_code && r.promo_code.toLowerCase().includes(query))
+                );
+            }
+
+            if (dateFrom) {
+                const fromDate = new Date(dateFrom);
+                fromDate.setHours(0, 0, 0, 0);
+                filteredRequests = filteredRequests.filter(r => new Date(r.created_at) >= fromDate);
+            }
+
+            if (dateTo) {
+                const toDate = new Date(dateTo);
+                toDate.setHours(23, 59, 59, 999);
+                filteredRequests = filteredRequests.filter(r => new Date(r.created_at) <= toDate);
+            }
 
             if (filteredRequests.length === 0) {
                 emptyState.classList.add('show');
@@ -993,6 +1134,7 @@
                     <td class="cell-email">${escapeHtml(request.email)}</td>
                     <td class="col-phone">${escapeHtml(request.phone)}</td>
                     <td class="col-address cell-address" title="${escapeHtml(request.address)}">${escapeHtml(request.address)}</td>
+                    <td class="col-promo cell-promo">${request.promo_code ? escapeHtml(request.promo_code) : '<span class="no-promo">-</span>'}</td>
                     <td><span class="status-badge ${request.status}">${request.status}</span></td>
                     <td class="col-date cell-date">${formatDate(request.created_at)}</td>
                     <td>
@@ -1110,6 +1252,16 @@
         document.getElementById('modal-cancel').addEventListener('click', hideModal);
         document.getElementById('modal-confirm').addEventListener('click', () => { if (pendingAction) pendingAction(); hideModal(); });
         statusFilter.addEventListener('change', (e) => { currentFilter = e.target.value; renderTable(); });
+        document.getElementById('search-input').addEventListener('input', (e) => { searchQuery = e.target.value.trim(); renderTable(); });
+        document.getElementById('date-from').addEventListener('change', (e) => { dateFrom = e.target.value; renderTable(); });
+        document.getElementById('date-to').addEventListener('change', (e) => { dateTo = e.target.value; renderTable(); });
+        document.getElementById('clear-dates-btn').addEventListener('click', () => {
+            dateFrom = '';
+            dateTo = '';
+            document.getElementById('date-from').value = '';
+            document.getElementById('date-to').value = '';
+            renderTable();
+        });
         document.getElementById('refresh-btn').addEventListener('click', fetchRequests);
         document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
         document.getElementById('logout-btn').addEventListener('click', logout);

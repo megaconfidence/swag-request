@@ -37,13 +37,14 @@ export async function handleSwagRequestSubmission(
 
 		// Insert the request
 		await env.DB.prepare(`
-			INSERT INTO swag_requests (name, email, phone, address)
-			VALUES (?, ?, ?, ?)
+			INSERT INTO swag_requests (name, email, phone, address, promo_code)
+			VALUES (?, ?, ?, ?, ?)
 		`).bind(
 			data.name.trim(),
 			email,
 			data.phone.trim(),
-			data.address.trim()
+			data.address.trim(),
+			data.promo_code?.trim() || null
 		).run();
 
 		return jsonResponse({ success: true, message: 'Swag request submitted successfully' });

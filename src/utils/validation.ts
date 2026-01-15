@@ -20,5 +20,8 @@ export function validateSwagRequest(data: SwagRequestInput): { valid: boolean; e
 	if (!data.address || typeof data.address !== 'string' || data.address.trim().length < 10) {
 		return { valid: false, error: 'Please provide a complete shipping address' };
 	}
+	if (data.promo_code !== undefined && typeof data.promo_code !== 'string') {
+		return { valid: false, error: 'Promo code must be a string' };
+	}
 	return { valid: true };
 }
