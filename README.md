@@ -20,6 +20,7 @@ A Cloudflare Workers application that allows users to submit requests for Cloudf
 - **Email**: Resend API
 - **Frontend**: HTML + Tailwind CSS
 - **Testing**: Vitest with @cloudflare/vitest-pool-workers
+- **CI/CD**: Automated builds via Worker Builds
 
 ## Project Structure
 
